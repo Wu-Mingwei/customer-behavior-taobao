@@ -1,0 +1,43 @@
+---
+title: "User Behavior"
+authoer: "Mingwei Wu"
+output: html_notebook
+---
+
+# Background
+## Data randomly extract 8477 customers and 1048575 values from 2014/11/18 to 2014/12/18 in taobao shopping, including customer_id,items_id,behavior_type,location,items_category.
+
+# Goal
+## Generate the model by analysing User-behavior, and reporting the outcome.
+
+# data interpretation
+## user_id: randomly int of user
+## item_id: item id
+## behavior: pv(page view), fav(collection), cart(cart), buy
+## item_category: type of category of items
+
+```{r}
+ub<-read.csv("UserBehavior.csv", header=TRUE) # Import data
+```
+
+```{r}
+dim(ub)
+```
+```{r}
+head(ub)
+```
+```{r}
+library(tidyverse)
+```
+```{r}
+ub%>%
+  rename(id=X1,
+         user_id=X2268318,
+         item_id=X2520377,
+         behavior=pv,
+         item_category=X1511544070)
+```
+
+
+
+
