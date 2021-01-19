@@ -17,7 +17,7 @@ output: html_notebook
 ## item_category: type of category of items
 
 ```{r}
-ub<-read.csv("UserBehavior.csv", header = T,nrows=10000) # Import data
+ub<-read.csv("UserBehavior.csv", header = T,nrows=300000) # Import data
 ```
 
 ```{r}
@@ -29,6 +29,8 @@ head(ub)
 ```{r}
 library(tidyverse)
 library(dplyr)
+library(sqldf)
+library(scales)
 ```
 ```{r}
 ub<-ub%>%
@@ -43,9 +45,89 @@ head(ub)
 ```
 ```{r}
 ub%>%
+  ggplot(aes(behavior))+geom_histogram(stat = 'count', binwidth = 50, color='blue',fill='gray') #histogram to show behavior
+```
+## conducted data with SQL to check duplicated observations.
+```{r}
+sqldf("select *, count(*)
+      from ub
+      group by id,user_id,item_id,behavior,item_category
+      having count(user_id) > 1") # none of ob is duplicated
+```
+
+```{r}
+ub%>%
+  group_by(user_id)%>%
+  count()%>%
+  arrange(desc(n)) # calculates 7390 unique customers buy on the website in 10 thousand observations, and one person frequency is 26 at period time of month.
+```
+
+```{r}
+ub1<-ub%>%
   group_by(behavior)%>%
   count() #counting the amount of behavior type
+ub1
 ```
+
+```{r}
+ub2<-ub1%>%
+  ungroup(behavior)%>%
+  arrange(n)
+ub2 
+```
+```{r}
+ub2<-ub2 %>%
+  mutate(behavior = factor(behavior, 
+                levels = c("buy","cart","fav","pv")),
+              cumulative = cumsum(n),
+                midpoint = cumulative - n/2,
+                labels = paste0(round((n/ sum(n)) * 100, 1), "%"))
+ub2
+```
+```{r}
+ub2%>%
+  ggplot(aes(x="",y=n,fill=behavior))+geom_bar(width=1,stat = "identity")+
+  coord_polar(theta = "y",start=0)+labs(x="",y="", title="customer behavior on web",fill="behavior")+scale_fill_manual(values = c("yellow", "Red", "Green", "Orange"))+theme_void() #pie chart to show the percentage of customer behavior
+```
+
+```{r}
+ub1 #PV is 269339 in 300k observations
+```
+```{r}
+unique(ub["user_id"])%>%
+  count()  # unique user amount click on website as 162953 in 300000 observations
+```
+```{r}
+PV<-c(269339)
+UV<-c(162953)
+rate_clicked_person<-PV/UV
+page_view<-data.frame(PV,UV,rate_clicked_person)
+page_view #page_view is 269339, unique customer amount is 162953, mean of clicked is 1.65 as rate
+```
+
+```{r}
+cart<-c(16823); fav<-c(7524);buy<-6314
+behavior<-c("PV","fav+cart","buy")
+quantity<-c(PV,fav+cart,buy)
+rate<-c(PV/PV,(fav+cart)/PV,buy/PV)
+percent(rate)
+```
+```{r}
+rate_shopping<-data.frame(behavior,quantity,rate)
+rate_shopping$rate<-percent(rate_shopping$rate)
+rate_shopping
+```
+```{r}
+hist(quanity)
+```
+
+
+
+
+
+
+
+
 
 
 
