@@ -17,7 +17,14 @@ output: html_notebook
 ## item_category: type of category of items
 
 ```{r}
-ub<-read.csv("UserBehavior.csv", header = T,nrows=300000) # Import data
+library(tidyverse)
+library(dplyr)
+library(sqldf)
+library(scales)
+```
+
+```{r}
+ub<-read.csv("UserBehavior.csv",header = TRUE,nrow=2000000)
 ```
 
 ```{r}
@@ -26,12 +33,7 @@ dim(ub)
 ```{r}
 head(ub)
 ```
-```{r}
-library(tidyverse)
-library(dplyr)
-library(sqldf)
-library(scales)
-```
+
 ```{r}
 ub<-ub%>%
   rename(id=X1,
@@ -39,10 +41,16 @@ ub<-ub%>%
          item_id=X2520377,
          behavior=pv,
          item_category=X1511544070)
+
 ```
 ```{r}
 head(ub)
 ```
+```{r}
+set.seed(1213)
+ub<-ub[sample(1:nrow(ub),300000),]
+```
+
 ```{r}
 ub%>%
   ggplot(aes(behavior))+geom_histogram(stat = 'count', binwidth = 50, color='blue',fill='gray') #histogram to show behavior
@@ -59,7 +67,7 @@ sqldf("select *, count(*)
 ub%>%
   group_by(user_id)%>%
   count()%>%
-  arrange(desc(n)) # calculates 7390 unique customers buy on the website in 10 thousand observations, and one person frequency is 26 at period time of month.
+  arrange(desc(n)) # calculates 189239 unique customers buy on the website in 300 thousand observations, and one person frequency is 106 at period time of month.
 ```
 
 ```{r}
@@ -91,35 +99,57 @@ ub2%>%
 ```
 
 ```{r}
-ub1 #PV is 269339 in 300k observations
+ub1 #page_view is 268646 in 300k observations
 ```
 ```{r}
 unique(ub["user_id"])%>%
-  count()  # unique user amount click on website as 162953 in 300000 observations
+  count()  # unique user amount click on website as 189239 in 300000 observations
 ```
 ```{r}
-PV<-c(269339)
-UV<-c(162953)
+PV<-c(268646)
+UV<-c(189239)
 rate_clicked_person<-PV/UV
 page_view<-data.frame(PV,UV,rate_clicked_person)
-page_view #page_view is 269339, unique customer amount is 162953, mean of clicked is 1.65 as rate
+page_view #page_view is 268646, unique customer amount is 189239, mean of clicked is 1.42 as rate
 ```
 
 ```{r}
-cart<-c(16823); fav<-c(7524);buy<-6314
+cart<-c(16678); fav<-c(8669);buy<-6007
 behavior<-c("PV","fav+cart","buy")
 quantity<-c(PV,fav+cart,buy)
 rate<-c(PV/PV,(fav+cart)/PV,buy/PV)
-percent(rate)
 ```
 ```{r}
 rate_shopping<-data.frame(behavior,quantity,rate)
-rate_shopping$rate<-percent(rate_shopping$rate)
-rate_shopping
+rate_shopping  # only 2.2% of the customer who fished processing of shopping, and 9.0% of page_view is collect goods
 ```
 ```{r}
-hist(quanity)
+cr<-buy/(fav+cart);percent(cr) #24% of customer add goods to chart and buy
 ```
+
+```{r}
+rate_shopping%>%
+  ggplot(aes(behavior,y=rate))+geom_bar(stat="identity",color="blue",fill="white")+coord_flip()+geom_text(aes(label=percent(round(rate,2))))+ggtitle("visualization of conversaion rate")
+```
+
+```{r}
+vnb<-(PV+cart+fav)-buy;vnb #287986 customer only view the page,including add good to chart, but not buy in 300k observations.
+```
+```{r}
+sqldf("select count(behavior) as total_buy
+      from ub
+      where behavior ='buy'") #only 6007 as buy amount in 300k observations
+```
+
+```{r}
+ub%>%
+  filter(behavior=="buy")%>%
+  group_by(user_id)%>%
+  count()%>%
+  ungroup()%>%
+  summarise(rate_person_buy=mean(n)) #1.05 as the rate of people in buy behavior
+```
+
 
 
 
