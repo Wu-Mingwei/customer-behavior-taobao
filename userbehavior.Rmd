@@ -149,6 +149,16 @@ ub%>%
   ungroup()%>%
   summarise(rate_person_buy=mean(n)) #1.05 as the rate of people in buy behavior
 ```
+```{r}
+ub%>%
+  filter(behavior=="buy")%>%
+  group_by(user_id)%>%
+  count()%>%
+  filter(n > 1)%>%
+  ungroup()%>%
+  summarise(n=n()) #259 people
+```
+
 
 
 
