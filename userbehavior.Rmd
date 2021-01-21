@@ -24,31 +24,21 @@ library(scales)
 ```
 
 ```{r}
-ub<-read.csv("UserBehavior.csv",header = TRUE,nrow=2000000)
+ub<-read.csv("UserBehavior.csv",skip = 1,header = TRUE,nrow=200000)
 ```
 
-```{r}
-dim(ub)
-```
-```{r}
-head(ub)
-```
 
 ```{r}
 ub<-ub%>%
   rename(id=X1,
-         user_id=X2268318,
-         item_id=X2520377,
+         user_id=X2333346,
+         item_id=X2520771,
          behavior=pv,
-         item_category=X1511544070)
+         item_category=X1511561733)
 
 ```
 ```{r}
 head(ub)
-```
-```{r}
-set.seed(1213)
-ub<-ub[sample(1:nrow(ub),300000),]
 ```
 
 ```{r}
@@ -171,12 +161,7 @@ ub%>%
 ```{r}
 259/5720 # only 5% people who buy more than once in the time period.
 ```
-```{r}
-ub%>%
-  filter(behavior=="buy")%>%
-  group_by(user_id)%>%
-  count()
-```
+
 
 
 ```{r}
