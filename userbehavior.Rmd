@@ -154,11 +154,47 @@ ub%>%
   filter(behavior=="buy")%>%
   group_by(user_id)%>%
   count()%>%
-  filter(n > 1)%>%
   ungroup()%>%
-  summarise(n=n()) #259 people
+  summarise(total_person_buy=n())
 ```
 
+```{r}
+ub%>%
+  filter(behavior=="buy")%>%
+  group_by(user_id)%>%
+  count()%>%
+  filter(n > 1)%>%
+  ungroup()%>%
+  summarise(rate_people_morethan_once=n()) #259 people is buy on the website more than once
+```
+
+```{r}
+259/5720 # only 5% people who buy more than once in the time period.
+```
+```{r}
+ub%>%
+  filter(behavior=="buy")%>%
+  group_by(user_id)%>%
+  count()
+```
+
+
+```{r}
+sqldf("select item_category, count(behavior) as amout_buy
+      from ub
+      where behavior == 'buy'
+      group by item_category
+      order by count(behavior) desc limit 10") # top 10 sales
+```
+
+```{r}
+ub%>%
+  filter(behavior=="buy")%>%
+  group_by(item_category)%>%
+  count()%>%
+  arrange(desc(n))%>%
+  ggplot(aes(item_category))+geom_histogram(color="white",fill="blue")
+```
 
 
 
