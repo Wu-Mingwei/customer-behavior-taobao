@@ -1,7 +1,8 @@
 ---
 title: "User Behavior"
-authoer: "Mingwei Wu"
-output: html_notebook
+author: "Mingwei(Show) Wu"
+date: "1/23/2021"
+output: pdf_document
 ---
 
 # Background
@@ -57,7 +58,7 @@ sqldf("select *, count(*)
 ub%>%
   group_by(user_id)%>%
   count()%>%
-  arrange(desc(n)) # calculates 189239 unique customers buy on the website in 300 thousand observations, and one person frequency is 106 at period time of month.
+  arrange(desc(n)) # calculates 117081 unique customers buy on the website in 200 thousand observations, and one person frequency is 106 at period time of month.
 ```
 
 ```{r}
@@ -89,32 +90,32 @@ ub2%>%
 ```
 
 ```{r}
-ub1 #page_view is 268646 in 300k observations
+ub1 #page_view is 179831 in 200k observations
 ```
 ```{r}
 unique(ub["user_id"])%>%
-  count()  # unique user amount click on website as 189239 in 300000 observations
+  count()  # unique user amount click on website as 117081 in 200k observations
 ```
 ```{r}
-PV<-c(268646)
-UV<-c(189239)
+PV<-c(179831)
+UV<-c(117081)
 rate_clicked_person<-PV/UV
 page_view<-data.frame(PV,UV,rate_clicked_person)
-page_view #page_view is 268646, unique customer amount is 189239, mean of clicked is 1.42 as rate
+page_view #page_view is 179831, unique customer amount is 117081, mean of clicked is 1.53% as rate
 ```
 
 ```{r}
-cart<-c(16678); fav<-c(8669);buy<-6007
+cart<-c(10906); fav<-c(4934);buy<-4329
 behavior<-c("PV","fav+cart","buy")
 quantity<-c(PV,fav+cart,buy)
 rate<-c(PV/PV,(fav+cart)/PV,buy/PV)
 ```
 ```{r}
 rate_shopping<-data.frame(behavior,quantity,rate)
-rate_shopping  # only 2.2% of the customer who fished processing of shopping, and 9.0% of page_view is collect goods
+rate_shopping  # only 2.4% of the customer who fished processing of shopping, and 9.0% of page_view is collect goods
 ```
 ```{r}
-cr<-buy/(fav+cart);percent(cr) #24% of customer add goods to chart and buy
+cr<-buy/(fav+cart);percent(cr) #27% as conversation rate between fav+cart and buy
 ```
 
 ```{r}
@@ -123,12 +124,12 @@ rate_shopping%>%
 ```
 
 ```{r}
-vnb<-(PV+cart+fav)-buy;vnb #287986 customer only view the page,including add good to chart, but not buy in 300k observations.
+vnb<-(PV+cart+fav)-buy;vnb #191342 customer only view the page,including add good to chart, but not buy in 300k observations.
 ```
 ```{r}
 sqldf("select count(behavior) as total_buy
       from ub
-      where behavior ='buy'") #only 6007 as buy amount in 300k observations
+      where behavior ='buy'") #only 4329 as buy amount in 300k observations
 ```
 
 ```{r}
@@ -137,7 +138,7 @@ ub%>%
   group_by(user_id)%>%
   count()%>%
   ungroup()%>%
-  summarise(rate_person_buy=mean(n)) #1.05 as the rate of people in buy behavior
+  summarise(rate_person_buy=mean(n)) #1.08% as the rate of people in buy behavior
 ```
 ```{r}
 ub%>%
@@ -155,11 +156,11 @@ ub%>%
   count()%>%
   filter(n > 1)%>%
   ungroup()%>%
-  summarise(rate_people_morethan_once=n()) #259 people is buy on the website more than once
+  summarise(rate_people_morethan_once=n()) #269 people is buy on the website more than once
 ```
 
 ```{r}
-259/5720 # only 5% people who buy more than once in the time period.
+269/4007 # only 6.7% people who buy more than once in the time period.
 ```
 
 
@@ -180,18 +181,92 @@ ub%>%
   arrange(desc(n))%>%
   ggplot(aes(item_category))+geom_histogram(color="white",fill="blue")
 ```
+```{r}
+ub%>%
+  filter(behavior=="pv")%>%
+  group_by(item_id)%>%
+  count()%>%
+  arrange(desc(n))%>%
+  head() #top 6 view of 6 items
+```
+```{r}
+ub%>%
+  filter(behavior=="buy")%>%
+  group_by(item_id)%>%
+  count()%>%
+  arrange(desc(n))%>%
+  head() # top 6 sales of items
+```
 
+```{r}
+sqldf(" select a.item_id, a.view, b.buy
+      from (
+      select item_id, count(*) as view
+      from ub
+      where behavior ='pv'
+      group by item_id
+      order by count(*) desc
+      limit 6
+      ) as a
+      join (
+      select item_id, count(*) as buy
+      from ub
+      where behavior ='buy'
+      group by item_id
+      order by count(*) desc
+      limit 6
+      ) as b
+      on a.item_id=b.item_id") # using SQL to query the relationship between the view and buy. only 1 item was buy.
+```
 
+```{r}
+view_buy<-sqldf(" select a.item_id, a.view, b.buy
+      from (
+      select item_id, count(*) as view
+      from ub
+      where behavior ='pv'
+      group by item_id
+      order by count(*) desc
+      ) as a
+      left join (
+      select item_id, count(*) as buy
+      from ub
+      where behavior ='buy'
+      group by item_id
+      order by count(*) desc
+      ) as b
+      on a.item_id=b.item_id") #create a data frame between view and buy 
+head(view_buy)
+```
+```{r}
+pairs(view_buy) #view the plot between view and buy
+```
 
+```{r}
+view_buy%>%
+  ggplot(aes(view,buy))+geom_point() 
+```
+```{r}
+view_buy%>%
+  ggplot(aes(view,buy))+geom_point()+geom_smooth() # graph does not show the linear relationship between view and buy
+```
 
+# RFM model
+### Since the database miss the date values. we cannot count the intervel of the time for the recent buyer. However, we are counting the frequency of the buyer and set up the standard as 3. The further research, we can add the date values, then combine with the frequecy data frame to build up RFM model. Group our customers into 4 major types and provide the sales strategy.
+```{r}
+ub%>%
+  filter(behavior=="buy")%>%
+  group_by(user_id)%>%
+  count()%>%
+  arrange(desc(n)) # amount 4007 as buy, the most frequency of buyer is 6, then minimum is 1. so we can using 3 as standard for Frequency
+```
 
-
-
-
-
-
-
-
-
-
-
+# Long Tail Theory
+```{r}
+item_fre<-ub%>%
+  filter(behavior=="buy")%>%
+  group_by(item_id)%>%
+  count()%>%
+  arrange(desc(n))
+head(item_fre) #after counting we can see the most sales of item only 71 times. the total buy was 4007. 71 is less than 80 which is 20 percentage in 4007.
+```
